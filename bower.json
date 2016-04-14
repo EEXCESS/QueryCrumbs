@@ -1,0 +1,30 @@
+{
+  "name": "QueryCrumbs",
+  "version": "0.0.1",
+  "homepage": "https://github.com/EEXCESS/QueryCrumbs",
+  "authors": [
+    "EEXCESS consortium <eexcess-dev@joanneum.at" 
+  ],
+  "description": "a search history visualization",
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": [
+    "query",
+    "visualization"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "examples"
+  ],
+  "dependencies": {
+    "d3": "~3.5.6",
+    "jquery": ">=2.1.4",
+    "requirejs": "~2.1.17"
+  }
+}
