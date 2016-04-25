@@ -3,7 +3,7 @@
  *
  * @module c4/queryCrumbs
  */
-define(['jquery', 'd3', 'c4/QueryCrumbs/querycrumbs-settings'], function($, d3, QueryCrumbsConfiguration) {
+define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, QueryCrumbsConfiguration) {
 
     var self = {
         // The DOM element to plug in the QueryCrumbs visualization

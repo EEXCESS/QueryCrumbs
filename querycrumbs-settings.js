@@ -2,7 +2,7 @@
  *
  * @module c4/queryCrumbs-settings
  */
-define(['c4/colorbrewer'], function (colorbrewer) {
+define(['colorbrew_js'], function (colorbrewer) {
 
     var QueryCrumbsConfiguration = {
         /*
