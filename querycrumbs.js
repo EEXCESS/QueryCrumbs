@@ -45,9 +45,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     }
                 }
                 self.setHistory({history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: query.queryID});
-                query.origin = {
-                    module: "QueryCrumbs"
-                };
+                query = query.query
                 self.navigateQueryCallback(query);
             },
             onMouseOverNode: function(d, i) {
@@ -165,7 +163,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
         CORE: {
             generateVisualNode: function(query) {
                 var vNode = {};
-                vNode.query = self.CORE.getQueryTerms(query).join();
+                vNode.query = query.query;
                 vNode.queryID = query.queryID;
                 vNode.rID = null;
                 vNode.xpos = null;//QueryCrumbsConfiguration.dimensions.circle_cxy + nodeIdx * (QueryCrumbsConfiguration.dimensions.circle_r*2 + QueryCrumbsConfiguration.dimensions.edgeWidth);
@@ -174,12 +172,13 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 vNode.base_color = null;//(visualDataNodes[nodeIdx - 1]) ? BaseColorManager.getColor(visualDataNodes[nodeIdx - 1].base_color, vNode.sim) : BaseColorManager.getFirstColor();
                 vNode.fShowEnterTransition = true;
                 vNode.results = [];
-                for (var docIdx = 0; docIdx < query.result.length; docIdx++) {
+                for (var docIdx = 0; docIdx < query.results.length; docIdx++) {
                     var vDoc = {};
                     vDoc.index = docIdx;
-                    vDoc.uri = (query.result[docIdx]) ? query.result[docIdx].documentBadge.uri : "";
+                    vDoc.uri = query.results[docIdx];
                     vNode.results.push(vDoc);
                 }
+                console.log(vNode);
                 return vNode;
             },
             /**
@@ -191,6 +190,8 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
              * @param visualData
              */
             updateVisualData: function(visualData) {
+                console.log('hilde');
+                console.log(visualData);
                 var newNodes = [];
                 var nodeGroups = {};
 
@@ -212,7 +213,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                         } else {
                             visualData[nodeIdx].shift = false;
                         }
-                        if (nodeGroups.hasOwnProperty(visualData[nodeIdx].base_color)) {
+                        if (nodeGroups.hasOwnProperty(visualData[nodeIdx].base_color)) { // remove? (seems redundant)
                             nodeGroups[visualData[nodeIdx].base_color].push(visualData[nodeIdx]);
                         } else {
                             nodeGroups[visualData[nodeIdx].base_color] = [visualData[nodeIdx]];
@@ -285,10 +286,13 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 return similarities;
             },
             intersect: function(set1, set2) {
+                console.log('uriuri');
+                console.log(set1);
+                console.log(set2);
                 var mutualResults = [];
                 for (var r1 = 0; r1 < set1.length; r1++) {
                     for (var r2 = 0; r2 < set2.length; r2++) {
-                        if (set1[r1].uri === set2[r2].uri) {
+                        if (set1[r1].uri.uri === set2[r2].uri.uri) {
                             mutualResults.push(set1[r1]);
                             break;
                         }
@@ -297,13 +301,14 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 return mutualResults;
             },
             collectIdenticalResults: function(refQueryIdx) {
+                console.log(refQueryIdx)
                 var sims = [];
                 for (var qi = 0; qi < self.historyData.length; qi++) {
                     var querySims = [];
-                    for (var ri = 0; ri < self.historyData[qi].result.length; ri++) {
+                    for (var ri = 0; ri < self.historyData[qi].results.length; ri++) {
                         var foundIdx = -1;
-                        for (var rri = 0; rri < self.historyData[refQueryIdx].result.length; rri++) {
-                            if (self.historyData[qi].result[ri].documentBadge.uri == self.historyData[refQueryIdx].result[rri].documentBadge.uri) {
+                        for (var rri = 0; rri < self.historyData[refQueryIdx].results.length; rri++) {
+                            if (self.historyData[qi].results[ri].uri == self.historyData[refQueryIdx].results[rri].uri) {
                                 foundIdx = rri;
                             }
                         }
@@ -311,15 +316,16 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     }
                     sims.push(querySims);
                 }
+                console.log(sims);
                 return sims;
             },
-            getQueryTerms: function(query) {
-                var queryTerms = [];
-                for (var i = 0; i < query.profile.contextKeywords.length; i++) {
-                    queryTerms.push(query.profile.contextKeywords[i].text);
-                }
-                return queryTerms;
-            },
+//            getQueryTerms: function(query) {
+//                var queryTerms = [];
+//                for (var i = 0; i < query.profile.contextKeywords.length; i++) {
+//                    queryTerms.push(query.profile.contextKeywords[i].text);
+//                }
+//                return queryTerms;
+//            },
             addVisualNode: function(query) {
                 self.historyData.push(query);
                 self.currentIdx = self.historyData.length - 1;
@@ -590,6 +596,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
          * The format must comply with the format returned by the Privacy Proxy {@link https://github.com/EEXCESS/eexcess/wiki/%5B21.09.2015%5D-Request-and-Response-format#pp-response-format}.
          */
         addNewQuery: function(query) {
+            query.queryID = new Date().getTime();
             self.historyData.splice(self.currentIdx + 1, self.historyData.length);
             self.visualData.splice(self.currentIdx + 1, self.visualData.length);
             self.CORE.addVisualNode(query);
@@ -609,6 +616,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.svgContainer.selectAll("g.infoBoxNode").remove();
                 self.INTERACTION.addInfoBox(this, d);
             });
+            console.log(self.historyData);
             self.setHistory({history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: self.historyData[self.currentIdx].queryID});
         }
     }
