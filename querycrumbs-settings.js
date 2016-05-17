@@ -50,7 +50,7 @@ define(['colorbrew_js'], function (colorbrewer) {
         // Query Crumbs dimensions
         dimensions: {
             // the number of visuals (= the number of queries to show)
-            HISTORY_LENGTH: 18,
+            HISTORY_LENGTH: 15,
                 // the maximum number of segments to show in each visual (each area corresponds to one document)
                 SEGMENTS: null,
                 /* Dimensions for the SQUARE visual type

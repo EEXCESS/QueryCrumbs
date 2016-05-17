@@ -178,7 +178,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     vDoc.uri = query.results[docIdx];
                     vNode.results.push(vDoc);
                 }
-                console.log(vNode);
+                //console.log(vNode);
                 return vNode;
             },
             /**
@@ -190,8 +190,8 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
              * @param visualData
              */
             updateVisualData: function(visualData) {
-                console.log('hilde');
-                console.log(visualData);
+                //console.log('hilde');
+                //console.log(visualData);
                 var newNodes = [];
                 var nodeGroups = {};
 
@@ -286,9 +286,9 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 return similarities;
             },
             intersect: function(set1, set2) {
-                console.log('uriuri');
-                console.log(set1);
-                console.log(set2);
+                //console.log('uriuri');
+                //console.log(set1);
+                //console.log(set2);
                 var mutualResults = [];
                 for (var r1 = 0; r1 < set1.length; r1++) {
                     for (var r2 = 0; r2 < set2.length; r2++) {
@@ -316,7 +316,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     }
                     sims.push(querySims);
                 }
-                console.log(sims);
+                //console.log(sims);
                 return sims;
             },
 //            getQueryTerms: function(query) {
@@ -616,8 +616,11 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.svgContainer.selectAll("g.infoBoxNode").remove();
                 self.INTERACTION.addInfoBox(this, d);
             });
-            console.log(self.historyData);
+            //console.log(self.historyData);
             self.setHistory({history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: self.historyData[self.currentIdx].queryID});
+        },
+        getLastCrumb: function(){
+            return (self.historyData.length > 0) ? self.historyData[self.historyData.length-1].query: '';
         }
     }
 });
