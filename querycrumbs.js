@@ -175,68 +175,48 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 }
                 infoBox.select("text").attr("x", ttX).attr("y", ys);
             },
-
-            //add doubleclick to remove
-            addHintBox: function(hoveredNode, nodeData) {
-                var hintBox = d3.select(hoveredNode).append("g").attr("class", "hintBoxNode");
-                hintBox.append("text").attr("class", "textNode")
-                    .text("Doubleclick to remove.")
-                    .attr("text-anchor", "start")
-                    .style("font-size", QueryCrumbsConfiguration.dimensions.rectInfoFontSize + "px")
-                    .style("font-family", "Verdana")
-                    .style("color", "#bbbbbb");
-
-                var jqNode = $("g text.textNode");
-                var w = jqNode.width();
-                var h = 2 * jqNode.height();
-                if (QueryCrumbsConfiguration.nodeForm == "CIRCLE") {
-                    var cx = d3.select(hoveredNode).select("circle.queryCircleBorder").attr("cx");
-                    //var ttX = nodeData.xpos - (w / 2) + 1;
-                    var ttX = cx - (w / 2) + 10;
-                    var ys = nodeData.ypos + QueryCrumbsConfiguration.dimensions.circle_r + QueryCrumbsConfiguration.dimensions.rectInfoVertPadding;
-                } else {
-                    var ttX = nodeData.xpos + QueryCrumbsConfiguration.dimensions.rectWidth / 2 - (w / 2) + 10;
-                    var ys = nodeData.ypos + QueryCrumbsConfiguration.dimensions.rectInfoVertPadding;
-                }
-                if (ttX + w > self.width) {
-                    ttX -= (ttX + w) - self.width;
-                }
-                if (ttX < 0) {
-                    ttX = 0;
-                }
-                hintBox.select("text").attr("x", ttX).attr("y", ys);
-            },
             addAddHoverHint: function() {
+                var showhover = 0;
+
+
+                console.log(showhover)
                 $(".crumblink").click(function(event) {
                     event.preventDefault();
                 });
 
-                $('.tooltrip').hover(function() {
-                    // Hover over code
-                    var title = $(this).attr('title');
-                    $(this).data('tipText', title).removeAttr('title');
-                    var ttp = $('<p class="tooltip"></p>').css({
-                            'display': 'none',
-                            'position': 'absolute',
-                            'border': '1px solid #f5f2c0',
-                            'background-color': '#fffcca',
-                            'padding': '3px',
-                            'color': '#000',
-                            'font-size': '10px'
-                        })
-                        .text(title)
-                        .appendTo('body')
-                        .fadeIn('slow').delay(1500).fadeOut(200);
-                   
-                }, function() {
-                    // Hover out code
-                    $(this).attr('title', $(this).data('tipText'));
-                    $('.tooltip').remove();
-                }).mousemove(function(e) {
-                    var mousex = e.pageX + 20; //Get X coordinates
-                    var mousey = e.pageY + 10; //Get Y coordinates
-                    $('.tooltip')
-                        .css({ top: mousey, left: mousex })
+                $(document).ready(function() {
+                    $('.tooltrip').hover(function() {
+                        if (showhover % 5 == 0) {
+                            console.log("hover")
+                                // Hover over code
+                            var title = $(this).attr('title');
+                            $(this).data('tipText', title).removeAttr('title');
+                            var ttp = $('<p class="tooltip"></p>').css({
+                                    'display': 'none',
+                                    'position': 'absolute',
+                                    'border': '1px solid #f5f2c0',
+                                    'background-color': '#fffcca',
+                                    'padding': '3px',
+                                    'color': '#000',
+                                    'font-size': '10px'
+                                })
+                                .text(title)
+                                .appendTo('body')
+                                .fadeIn('slow').delay(1500).fadeOut(200);
+
+                        }
+                        showhover++;
+
+                    }, function() {
+                        // Hover out code
+                        $(this).attr('title', $(this).data('tipText'));
+                        $('.tooltip').remove();
+                    }).mousemove(function(e) {
+                        var mousex = e.pageX + 20; //Get X coordinates
+                        var mousey = e.pageY; //Get Y coordinates
+                        $('.tooltip')
+                            .css({ top: mousey, left: mousex })
+                    });
                 });
             }
         },
@@ -693,6 +673,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.RENDERING.setCurrentQuery(currentQueryID);
             });
             self.INTERACTION.addAddHoverHint();
+
         },
         /**
          * Refresh the visualization from the status stored in storage.
@@ -717,6 +698,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.RENDERING.redraw(self.visualData);
                 self.RENDERING.setCurrentQuery(currentQueryID);
             });
+
         },
         /**
          * Add a new query to the query history. In the QueryCrumbs-visualization, a new query-node will be drawn
