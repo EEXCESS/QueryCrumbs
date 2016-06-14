@@ -185,6 +185,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 });
 
                 $(document).ready(function() {
+                    $('.tooltrip').css("cursor","pointer");
                     $('.tooltrip').hover(function() {
                         if (showhover % 5 == 0) {
                             console.log("hover")
@@ -564,8 +565,8 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
 
 
 
-                crumbs.enter().append("a").attr("class", "crumblink tooltrip").attr("title", "Doubleclick to remove").attr("href", "").attr("alt", "asdf")
-                    .append("g").attr("class", "crumb")
+                crumbs.enter()/*.append("a").attr("class", "crumblink tooltrip").attr("title", "Doubleclick to remove").attr("href", "")*/
+                    .append("g").attr("class", "crumb tooltrip").attr("title", "Doubleclick to remove")
                     .on("mouseenter", self.INTERACTION.onMouseOverNode)
                     .on("mouseleave", self.INTERACTION.onMouseOutNode)
                     .on('click', self.RENDERING.singleDoubleClick(self.INTERACTION.onClick, self.INTERACTION.dblClick))
