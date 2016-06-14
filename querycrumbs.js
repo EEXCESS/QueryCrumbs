@@ -67,12 +67,12 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                         break;
                     }
                 }
-       /*         var newhistoryData = [];
-                var newvisualData = [];
-                for (var n = 0; n < self.historyData.length; n++) {
-                    newhistoryData.push(self.historyData[n]);
-                    newvisualData.push(self.visualData[n]);
-                }*/
+                /*         var newhistoryData = [];
+                         var newvisualData = [];
+                         for (var n = 0; n < self.historyData.length; n++) {
+                             newhistoryData.push(self.historyData[n]);
+                             newvisualData.push(self.visualData[n]);
+                         }*/
 
                 self.historyData.splice(pos, 1);
                 self.currentIdx = self.historyData.length - 1;
@@ -120,7 +120,8 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                         self.simResults.push(queryNode);
                     }
                 }
-                d3.select(this).select(".queryCircleBorder").transition().delay(0).duration(500).ease("elastic").attr("opacity", 1).attr("r", QueryCrumbsConfiguration.dimensions.circle_r).attr("stroke", "#1d904e");
+                d3.select(this).select(".queryCircleBorder").transition().delay(0).duration(500).ease("elastic").attr("opacity", 1).attr("r", QueryCrumbsConfiguration.dimensions.circle_r).attr("stroke", "#1d904e").attr("css", " cursor: pointer;");
+
 
                 self.svgContainer.selectAll("g.crumb").filter(function(d, i) {
                     return d.queryID != self.currentNode.queryID;
@@ -130,6 +131,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 }).selectAll("g.infoBoxNode").style("visibility", "hidden");
                 if (d3.select(this).select("g.infoBoxNode").empty()) {
                     self.INTERACTION.addInfoBox(this, d);
+                    /*self.INTERACTION.addHintBox(this, d);*/
                 }
             },
             onMouseOutNode: function(d, i) {
@@ -139,6 +141,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.svgContainer.selectAll("g.crumb").filter(function(d, i) {
                     return d.queryID != self.currentNode.queryID;
                 }).selectAll("g.infoBoxNode").remove();
+                self.svgContainer.selectAll("g.crumb").selectAll("g.hintBoxNode").remove();
                 self.svgContainer.selectAll("g.crumb").filter(function(d, i) {
                     return d.queryID == self.currentNode.queryID;
                 }).selectAll("g.infoBoxNode").style("visibility", "visible");
@@ -171,6 +174,70 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     ttX = 0;
                 }
                 infoBox.select("text").attr("x", ttX).attr("y", ys);
+            },
+
+            //add doubleclick to remove
+            addHintBox: function(hoveredNode, nodeData) {
+                var hintBox = d3.select(hoveredNode).append("g").attr("class", "hintBoxNode");
+                hintBox.append("text").attr("class", "textNode")
+                    .text("Doubleclick to remove.")
+                    .attr("text-anchor", "start")
+                    .style("font-size", QueryCrumbsConfiguration.dimensions.rectInfoFontSize + "px")
+                    .style("font-family", "Verdana")
+                    .style("color", "#bbbbbb");
+
+                var jqNode = $("g text.textNode");
+                var w = jqNode.width();
+                var h = 2 * jqNode.height();
+                if (QueryCrumbsConfiguration.nodeForm == "CIRCLE") {
+                    var cx = d3.select(hoveredNode).select("circle.queryCircleBorder").attr("cx");
+                    //var ttX = nodeData.xpos - (w / 2) + 1;
+                    var ttX = cx - (w / 2) + 10;
+                    var ys = nodeData.ypos + QueryCrumbsConfiguration.dimensions.circle_r + QueryCrumbsConfiguration.dimensions.rectInfoVertPadding;
+                } else {
+                    var ttX = nodeData.xpos + QueryCrumbsConfiguration.dimensions.rectWidth / 2 - (w / 2) + 10;
+                    var ys = nodeData.ypos + QueryCrumbsConfiguration.dimensions.rectInfoVertPadding;
+                }
+                if (ttX + w > self.width) {
+                    ttX -= (ttX + w) - self.width;
+                }
+                if (ttX < 0) {
+                    ttX = 0;
+                }
+                hintBox.select("text").attr("x", ttX).attr("y", ys);
+            },
+            addAddHoverHint: function() {
+                $(".crumblink").click(function(event) {
+                    event.preventDefault();
+                });
+
+                $('.tooltrip').hover(function() {
+                    // Hover over code
+                    var title = $(this).attr('title');
+                    $(this).data('tipText', title).removeAttr('title');
+                    var ttp = $('<p class="tooltip"></p>').css({
+                            'display': 'none',
+                            'position': 'absolute',
+                            'border': '1px solid #f5f2c0',
+                            'background-color': '#fffcca',
+                            'padding': '3px',
+                            'color': '#000',
+                            'font-size': '10px'
+                        })
+                        .text(title)
+                        .appendTo('body')
+                        .fadeIn('slow').delay(1500).fadeOut(200);
+                   
+                }, function() {
+                    // Hover out code
+                    $(this).attr('title', $(this).data('tipText'));
+                    $('.tooltip').remove();
+                }).mousemove(function(e) {
+                    var mousex = e.pageX + 20; //Get X coordinates
+                    var mousey = e.pageY + 10; //Get Y coordinates
+                    $('.tooltip')
+                        .css({ top: mousey, left: mousex })
+                });
             }
         },
         /*
@@ -517,13 +584,13 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
 
 
 
-                crumbs.enter().append("g").attr("class", "crumb")
+                crumbs.enter().append("a").attr("class", "crumblink tooltrip").attr("title", "Doubleclick to remove").attr("href", "").attr("alt", "asdf")
+                    .append("g").attr("class", "crumb")
                     .on("mouseenter", self.INTERACTION.onMouseOverNode)
                     .on("mouseleave", self.INTERACTION.onMouseOutNode)
-                          .on('click', self.RENDERING.singleDoubleClick(self.INTERACTION.onClick, self.INTERACTION.dblClick))
+                    .on('click', self.RENDERING.singleDoubleClick(self.INTERACTION.onClick, self.INTERACTION.dblClick))
                     /*.on("click", self.INTERACTION.onClick)*/
                     .each(self.RENDERING.addCrumb);
-
 
 
 
@@ -625,6 +692,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.RENDERING.redraw(self.visualData);
                 self.RENDERING.setCurrentQuery(currentQueryID);
             });
+            self.INTERACTION.addAddHoverHint();
         },
         /**
          * Refresh the visualization from the status stored in storage.
