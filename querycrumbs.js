@@ -16,85 +16,81 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
         navigateQueryCallback: null,
         // A list of the HISTORY_LENGTH recent queries
         historyData: [],
-        historyChildData: [],
         // A list of similarities of one node to its predecessor
         similarities: [],
         // The main data object for visualization. Holding queries, positional information and similarities. This is what we need to redraw when new queries are issued.
         visualData: {},
-        visualChildData: {},
         // alsd
         crumbs: [],
         // Reference to the currently selected query node
         currentNode: null,
-        currentChildNode: null,
         currentIdx: 0,
-        currentChildIdx: 0,
-        currentQueryID: -1,
         // Temporarily stores the result documents which are identical to those of the currently hovered node.
         simResults: [],
         // The dimension of the svg panel
         width: QueryCrumbsConfiguration.dimensions.HISTORY_LENGTH * (QueryCrumbsConfiguration.dimensions.rectWidth + QueryCrumbsConfiguration.dimensions.edgeWidth) + 2 * QueryCrumbsConfiguration.dimensions.circle_cxy, // - QueryCrumbsConfiguration.dimensions.edgeWidth + 5,
-        height: 100,
-        /*QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.rectInfoVertPadding + QueryCrumbsConfiguration.dimensions.rectInfoFontSize + 3,*/
+        height: QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.rectInfoVertPadding + QueryCrumbsConfiguration.dimensions.rectInfoFontSize + 3,
         INTERACTION: {
             onClick: function(d, i) {
-                // console.log(d);
-                // console.log(i);
-                var isMainTree = false;
-                var mainNode = {};
-                for (var i = 0; i < self.historyData.length; i++) {
-                    if (self.historyData[i].queryID == d.queryID) {
-                        isMainTree = true;
-                        break;
-                    }
-                }
-                if (isMainTree) {
-                    self.currentNode = d;
-                    self.currentIdx = d.rID;
-                }else{
-                    self.currentChildIdx = d.rID;
-                    self.currentChildNode = d;
-                }
-
+                console.log(d);
+                console.log(i);
+                self.currentNode = d;
+                self.currentIdx = d.rID;
                 var element = $('#' + d.queryID).parent().get(0);
-                var query = d.query;
 
                 d3.select(element.parentNode).selectAll(".queryCircleBorder").attr("stroke-width", 1);
                 d3.select(element).select(".queryCircleBorder").attr("stroke-width", 3);
-                //Show Childs            
-                self.svgContainer.selectAll("g.child").remove();
-                self.RENDERING.drawChildNodes(self.historyData[self.currentIdx].children);
+                var query;
 
-                self.setHistory({ history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: self.historyData[self.currentIdx].queryID });
-
+                for (var n = 0; n < self.historyData.length; n++) {
+                    if (self.historyData[n].queryID === d.queryID) {
+                        query = self.historyData[n];
+                        break;
+                    }
+                }
+                console.log(query);
+                self.setHistory({ history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: query.queryID });
+                query = query.query
                 self.navigateQueryCallback(query);
             },
             dblClick: function(d, i) {
+                // self.currentNode = d;
+                // self.currentIdx = d.rID;
+                // var query;
+                console.log(self.currentIdx);
+                var pos = 0;
+                for (var n = 0; n < self.historyData.length; n++) {
+                    if (self.historyData[n].queryID === d.queryID) {
+                        // delete self.historyData[n];
+                        // delete self.visualData[n];
+                        pos = n;
+                        break;
+                    }
+                }
+                /*         var newhistoryData = [];
+                         var newvisualData = [];
+                         for (var n = 0; n < self.historyData.length; n++) {
+                             newhistoryData.push(self.historyData[n]);
+                             newvisualData.push(self.visualData[n]);
+                         }*/
 
-                var queryID = d.queryID;
-                self.CORE.deleteByQueryID(queryID);
-                
-                //Show Childs            
-                self.svgContainer.selectAll("g.child").remove();
-                self.RENDERING.drawChildNodes(self.historyData[self.currentIdx].children);
-                
+                self.historyData.splice(pos, 1);
+                self.currentIdx = self.historyData.length - 1;
+                self.currentNode = self.historyData[self.currentIdx];
+                self.visualData.splice(pos, 1);
+                self.visualData = self.CORE.updateVisualData(self.visualData);
+
                 self.RENDERING.redraw(self.visualData);
-
-                self.setHistory({ history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: self.historyData[self.currentIdx].queryID });
-
 
             },
             onMouseOverNode: function(d, i) {
 
                 var docNodeTag = (QueryCrumbsConfiguration.nodeForm === "CIRCLE") ? "path" : "rect";
-                var isChildTree = self.CORE.isChildTree(d.queryID);
+
                 if (QueryCrumbsConfiguration.skillLevel !== "BEGINNER") {
                     self.simResults = [];
-                    var history = (isChildTree) ? self.historyChildData : self.historyData;
                     var rootGroup = d3.select(this.parentNode);
-                    var resultIndices = self.CORE.collectIdenticalResults(d.rID, isChildTree);
-                    // console.log(d);
-                    // console.log(resultIndices);
+                    var resultIndices = self.CORE.collectIdenticalResults(d.rID);
                     for (var n = 0; n < resultIndices.length; n++) {
                         var idDocs = 0;
                         for (var ri = 0; ri < resultIndices[n].length; ri++) {
@@ -104,11 +100,10 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                         }
                         var queryNode = rootGroup.selectAll("g.crumb")
                             .filter(function(d, i) {
-                                return (d.queryID == history[n].queryID);
+                                return (d.queryID == self.historyData[n].queryID);
                             })
                             .selectAll(docNodeTag + ".docNode").transition().duration(100).style("opacity", function(d, i) {
                                 if (QueryCrumbsConfiguration.skillLevel == "INTERMEDIATE") {
-
                                     if (i < idDocs) {
                                         return QueryCrumbsConfiguration.colorSettings.oldDocOpacity;
                                     } else {
@@ -184,13 +179,13 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 var showhover = 0;
 
 
-                // console.log(showhover)
+                console.log(showhover)
                 $(".crumblink").click(function(event) {
                     event.preventDefault();
                 });
 
                 $(document).ready(function() {
-                    $('.tooltrip').css("cursor", "pointer");
+                    $('.tooltrip').css("cursor","pointer");
                     $('.tooltrip').hover(function() {
                         if (showhover % 5 == 0) {
                             console.log("hover")
@@ -254,7 +249,6 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 var vNode = {};
                 vNode.query = query.query;
                 vNode.queryID = query.queryID;
-                vNode.children = query.children;
                 vNode.rID = null;
                 vNode.xpos = null; //QueryCrumbsConfiguration.dimensions.circle_cxy + nodeIdx * (QueryCrumbsConfiguration.dimensions.circle_r*2 + QueryCrumbsConfiguration.dimensions.edgeWidth);
                 vNode.ypos = null; //QueryCrumbsConfiguration.dimensions.circle_cxy;
@@ -271,59 +265,6 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 //console.log(vNode);
                 return vNode;
             },
-            hasChildNodes: function(children) {
-                return (children && children.length >= 1);
-            },
-            isChildTree: function(queryID) {
-                return $('#' + queryID).parent().hasClass('child');
-            },
-            getLastMainQueryID: function() {
-                return (self.historyData.length >= 1) ? self.historyData[self.historyData.length - 1].queryID : 0;
-            },
-            getNodeByQueryID: function(queryID) {
-                var node = {};
-                for (var i = 0; i < self.historyData.length; i++) {
-                    if (self.historyData[i].queryID == queryID) {
-                        node = self.historyData[i];
-                        break;
-                    }
-                    //check childs
-                    if (self.CORE.hasChildNodes(self.historyData[i].children)) {
-                        for (var chi = 0; chi < self.historyData[i].children.length; chi++) {
-                            if (self.historyData[i].children[chi].queryID == queryID) {
-                                node = self.historyData[i].children[chi];
-                                break;
-                            }
-                        }
-                    }
-                }
-                return node;
-            },
-            deleteByQueryID: function(queryID) {
-                for (var i = 0; i < self.historyData.length; i++) {
-                    //check childs
-                    if (self.CORE.hasChildNodes(self.historyData[i].children)) {
-                        for (var chi = 0; chi < self.historyData[i].children.length; chi++) {
-                            if (self.historyData[i].children[chi].queryID == queryID) {
-                                self.historyData[i].children.splice(chi, 1);
-                                self.visualData[i].children.splice(chi, 1);
-                                self.visualData = self.CORE.updateVisualData(self.visualData);
-                                break;
-                            }
-                        }
-                    }
-                    if (self.historyData[i].queryID == queryID) {
-                        self.historyData.splice(i, 1);
-                        self.currentIdx = self.historyData.length - 1;
-                        self.currentQueryID = self.CORE.getLastMainQueryID();
-                        self.currentNode = self.historyData[self.currentIdx];
-                        self.visualData.splice(i, 1);
-                        self.visualData = self.CORE.updateVisualData(self.visualData);
-
-                        break;
-                    }
-                }
-            },
             /**
              * VisualData is a sequence of QueryCrumb-Dataobject to be rendered as-is. Each of these dataobjects should provide all information required to directly draw the object.
              * Therefore, we need to assign a relative index to each node. From this index we can compute the x-position of each node. If nodes already have a relative index, they have already been drawn previously.
@@ -332,26 +273,24 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
              * If there is no relative index set, this means the dataobject is new and has not yet been drawn. Again, we simply assign it the position in the visualData-array.
              * @param visualData
              */
-            updateVisualData: function(visualData, isChildData) {
-                console.log("updateVisualData");
+            updateVisualData: function(visualData) {
+                //console.log('hilde');
+                //console.log(visualData);
                 var newNodes = [];
                 var nodeGroups = {};
 
                 for (var nodeIdx = 0; nodeIdx < visualData.length; nodeIdx++) {
                     var old_rID = visualData[nodeIdx].rID;
                     visualData[nodeIdx].rID = nodeIdx;
-                    // console.log(old_rID);
                     if (QueryCrumbsConfiguration.nodeForm == "CIRCLE") {
                         visualData[nodeIdx].xpos = QueryCrumbsConfiguration.dimensions.circle_cxy + nodeIdx * (QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.edgeWidth);
-
-                        visualData[nodeIdx].xpos = (isChildData) ? visualData[nodeIdx].xpos + (self.currentIdx * (QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.edgeWidth)) : visualData[nodeIdx].xpos;
-                        visualData[nodeIdx].ypos = (isChildData) ? QueryCrumbsConfiguration.dimensions.circle_cxy * 2.6 : QueryCrumbsConfiguration.dimensions.circle_cxy;
+                        visualData[nodeIdx].ypos = QueryCrumbsConfiguration.dimensions.circle_cxy;
                     } else {
                         visualData[nodeIdx].xpos = QueryCrumbsConfiguration.dimensions.circle_cxy - QueryCrumbsConfiguration.dimensions.rectWidth / 2 + nodeIdx * (QueryCrumbsConfiguration.dimensions.rectWidth + QueryCrumbsConfiguration.dimensions.edgeWidth);
                         visualData[nodeIdx].ypos = QueryCrumbsConfiguration.dimensions.circle_cxy - QueryCrumbsConfiguration.dimensions.rectHeight / 2;
                     }
-
                     // Node already existed: Update index, indicate shifting to rendering-process and remember its group
+
                     if (old_rID !== null) {
                         if (old_rID > nodeIdx) {
                             visualData[nodeIdx].shift = true;
@@ -368,7 +307,6 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                         newNodes.push(visualData[nodeIdx]);
                     }
                 }
-
                 for (var nodeIdx = 0; nodeIdx < newNodes.length; nodeIdx++) {
                     var newNode = newNodes[nodeIdx];
                     var similarities = self.CORE.getGroupSimilarities(newNode, nodeGroups);
@@ -432,6 +370,9 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 return similarities;
             },
             intersect: function(set1, set2) {
+                //console.log('uriuri');
+                //console.log(set1);
+                //console.log(set2);
                 var mutualResults = [];
                 for (var r1 = 0; r1 < set1.length; r1++) {
                     for (var r2 = 0; r2 < set2.length; r2++) {
@@ -443,90 +384,46 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 }
                 return mutualResults;
             },
-            collectIdenticalResults: function(refQueryIdx, isChildTree) {
-                // console.log(refQueryIdx);
-                // console.log(isChildTree);
+            collectIdenticalResults: function(refQueryIdx) {
+                // console.log(refQueryIdx)
                 var sims = [];
-                if (isChildTree) {
-                    // console.log(self.historyChildData);
-                    for (var qi = 0; qi < self.historyChildData.length; qi++) {
-                        var querySims = [];
-                        for (var ri = 0; ri < self.historyChildData[qi].results.length; ri++) {
-                            var foundIdx = -1;
-                            for (var rri = 0; rri < self.historyChildData[refQueryIdx].results.length; rri++) {
-                                if (self.historyChildData[qi].results[ri].uri == self.historyChildData[refQueryIdx].results[rri].uri) {
-                                    foundIdx = rri;
-                                }
+                for (var qi = 0; qi < self.historyData.length; qi++) {
+                    var querySims = [];
+                    for (var ri = 0; ri < self.historyData[qi].results.length; ri++) {
+                        var foundIdx = -1;
+                        for (var rri = 0; rri < self.historyData[refQueryIdx].results.length; rri++) {
+                            if (self.historyData[qi].results[ri].uri == self.historyData[refQueryIdx].results[rri].uri) {
+                                foundIdx = rri;
                             }
-                            querySims.push(foundIdx);
                         }
-                        sims.push(querySims);
+                        querySims.push(foundIdx);
                     }
-                } else {
-                    for (var qi = 0; qi < self.historyData.length; qi++) {
-                        var querySims = [];
-                        for (var ri = 0; ri < self.historyData[qi].results.length; ri++) {
-                            var foundIdx = -1;
-                            for (var rri = 0; rri < self.historyData[refQueryIdx].results.length; rri++) {
-                                if (self.historyData[qi].results[ri].uri == self.historyData[refQueryIdx].results[rri].uri) {
-                                    foundIdx = rri;
-                                }
-                            }
-                            querySims.push(foundIdx);
-                        }
-                        sims.push(querySims);
-                    }
+                    sims.push(querySims);
                 }
-
                 //console.log(sims);
                 return sims;
             },
-            /* ,
-            collectIdenticalResults: function(refQueryIdx) {
-                console.log(refQueryIdx)
-                var sims = [];
-
-                for (var m = 0; m < self.historyData.length; m++) {
-                    var foundIdx = -1;
-                    //check for children
-                    if (self.CORE.hasChildNodes(self.historyData[m].children)) {
-                        for (var ch = 0; ch < self.historyData[m].children.length; ch++) {
-                            if (self.historyData[m].children[ch].queryID == refQueryIdx) {
-                                for (var i = 0; i < self.historyData[m].children[ch].results.length; i++) {
-
-                                    for (var i = 0; i < self.historyData.length; i++) {
-                                        self.historyData[i]
-                                    }
-                                    self.historyData[m].children[ch].results[i]
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-
-                return sims;
-            },*/
+            //            getQueryTerms: function(query) {
+            //                var queryTerms = [];
+            //                for (var i = 0; i < query.profile.contextKeywords.length; i++) {
+            //                    queryTerms.push(query.profile.contextKeywords[i].text);
+            //                }
+            //                return queryTerms;
+            //            },
             addVisualNode: function(query) {
-
                 self.historyData.push(query);
                 self.currentIdx = self.historyData.length - 1;
                 self.currentNode = self.historyData[self.currentIdx];
-
                 self.visualData.push(self.CORE.generateVisualNode(query));
                 self.visualData = self.CORE.updateVisualData(self.visualData);
-                self.historyData[self.currentIdx].color = self.visualData[self.currentIdx].base_color;
-
             }
         },
         RENDERING: {
             addCrumb: function(d) {
-                console.log("addCrumb:");
-                // console.log(d);
+
                 if (QueryCrumbsConfiguration.nodeForm == "CIRCLE") {
-                    var xpos = d.xpos; //QueryCrumbsConfiguration.dimensions.circle_cxy + d.rID * (QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.edgeWidth);
-                    var ypos = d.ypos; // QueryCrumbsConfiguration.dimensions.circle_cxy;
+                    var xpos = QueryCrumbsConfiguration.dimensions.circle_cxy + d.rID * (QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.edgeWidth);
+                    var ypos = QueryCrumbsConfiguration.dimensions.circle_cxy;
                     var r = 5;
                     var scaleBy = ((QueryCrumbsConfiguration.dimensions.circle_r - 2) / r);
 
@@ -545,7 +442,6 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     } else {
                         crumbBoundary.attr("opacity", 1).attr("r", QueryCrumbsConfiguration.dimensions.circle_r);
                     }
-                    //TODO add child node visualisation hint
 
                     var contentGroup = d3.select(this).append("g").attr("class", "queryCircleContent").attr("opacity", 0);
                     contentGroup.append("circle").attr({
@@ -553,7 +449,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                         cx: xpos,
                         cy: ypos,
                         r: r,
-                        fill: (self.CORE.getNodeByQueryID(d.queryID).color !== null) ? self.CORE.getNodeByQueryID(d.queryID).color : d.base_color
+                        fill: d.base_color
                     });
 
                     var docGroup = contentGroup.append("g").attr("transform", "translate(" + xpos + ", " + ypos + ")");
@@ -668,67 +564,18 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                     }
                 });
 
-                crumbs.enter()
+
+
+                crumbs.enter()/*.append("a").attr("class", "crumblink tooltrip").attr("title", "Doubleclick to remove").attr("href", "")*/
                     .append("g").attr("class", "crumb tooltrip").attr("title", "Doubleclick to remove")
                     .on("mouseenter", self.INTERACTION.onMouseOverNode)
                     .on("mouseleave", self.INTERACTION.onMouseOutNode)
                     .on('click', self.RENDERING.singleDoubleClick(self.INTERACTION.onClick, self.INTERACTION.dblClick))
+                    /*.on("click", self.INTERACTION.onClick)*/
                     .each(self.RENDERING.addCrumb);
 
-            },
-            drawChildNodes: function(childrenData) {
-
-                var visualChildData = [];
-                for (var i = 0; i < childrenData.length; i++) {
-                    // console.log(i);
-                    self.historyChildData.push(childrenData[i]);
-                    var vChildNode = self.CORE.generateVisualNode(childrenData[i]);
-                    vChildNode.base_color = (i <= 0) ? self.visualData[self.currentIdx].base_color : null;
-                    visualChildData.push(vChildNode);
-                }
-
-                self.visualChildData = self.CORE.updateVisualData(visualChildData, true);
-
-                var children = self.svgContainer.selectAll("g.crumb-child").data(visualChildData, function(d) {
-                    return d.queryID;
-                });
-                children.exit().attr("opacity", 1).transition().duration(500).delay(function(d, i) {
-                        return i * 50;
-                    }).ease("elastic").attr("opacity", 0)
-                    .attr("transform", function(d, i) {
-                        if (d.rID == 0) {
-                            return "translate(-100, 0)";
-                        } else {
-                            return "translate(0,100)";
-                        }
-                    }).each("end", function() {
-                        this.remove();
-                    });
-
-                children.transition().duration(500).ease("elastic").attr("transform", function(d, i) {
-                    var currentx = d3.transform(d3.select(this).attr("transform")).translate[0];
-                    var currenty = d3.transform(d3.select(this).attr("transform")).translate[1];
-                    if (d.shift) {
-                        var newX;
-                        if (QueryCrumbsConfiguration.nodeForm == "CIRCLE") {
-                            newX = currentx - (QueryCrumbsConfiguration.dimensions.circle_r * 2 + QueryCrumbsConfiguration.dimensions.edgeWidth);
-                        } else {
-                            newX = currentx - (QueryCrumbsConfiguration.dimensions.rectWidth + QueryCrumbsConfiguration.dimensions.edgeWidth);
-                        }
-                        return "translate(" + newX + ", " + currenty + ")";
-                    } else {
-                        return "translate(" + currentx + "," + currenty + ")";
-                    }
-                });
 
 
-
-                children.enter()
-                    .append("g").attr("class", "crumb child tooltrip").attr("title", "Doubleclick to remove")
-                    .on("mouseenter", self.INTERACTION.onMouseOverNode)
-                    .on("mouseleave", self.INTERACTION.onMouseOutNode)
-                    .on('click', self.RENDERING.singleDoubleClick(self.INTERACTION.onClick, self.INTERACTION.dblClick))
-                    .each(self.RENDERING.addCrumb);
             },
             singleDoubleClick: function(singleClk, doubleClk) {
                 return (function(d, i) {
@@ -819,20 +666,13 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 }
                 self.base_color = loadedHistory.base_color;
                 var currentQueryID = loadedHistory.currentQueryID;
-                // console.log(currentQueryID);
                 var hist = loadedHistory.history.slice(Math.max(loadedHistory.history.length - QueryCrumbsConfiguration.dimensions.HISTORY_LENGTH, 0));
-                console.log(hist);
                 self.visualData = [];
                 for (var nodeIdx = 0; nodeIdx < hist.length; nodeIdx++) {
                     self.CORE.addVisualNode(hist[nodeIdx]);
                 }
                 self.RENDERING.redraw(self.visualData);
                 self.RENDERING.setCurrentQuery(currentQueryID);
-                //Show Childs    
-                if (self.historyData.length > 0) {
-                    self.svgContainer.selectAll("g.child").remove();
-                    self.RENDERING.drawChildNodes(self.historyData[self.currentIdx].children);
-                }
             });
             self.INTERACTION.addAddHoverHint();
 
@@ -860,7 +700,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.RENDERING.redraw(self.visualData);
                 self.RENDERING.setCurrentQuery(currentQueryID);
             });
-
+            
 
         },
         /**
@@ -873,27 +713,9 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
          */
         addNewQuery: function(query) {
             query.queryID = new Date().getTime();
-            query.color = null;
-
-            //selected previous crumb -> add as child then
-            if (self.currentIdx < self.visualData.length - 1) {
-                console.log("childs adding:");
-                var childrenHistory = [];
-                //add all crumbs, that are bigger then the current as childs and remove from main crumbbar
-                for (var i = self.currentIdx + 1; i < self.historyData.length; i++) {
-                    childrenHistory.push(self.historyData[i]);
-                }
-                self.historyData[self.currentIdx].children = childrenHistory;
-                self.historyData.splice(self.currentIdx + 1, self.historyData.length - self.currentIdx + 1);
-                self.visualData.splice(self.currentIdx + 1, self.visualData.length - self.currentIdx + 1);
-            }
-
-            //add new crumb
+            self.historyData.splice(self.currentIdx + 1, self.historyData.length);
+            self.visualData.splice(self.currentIdx + 1, self.visualData.length);
             self.CORE.addVisualNode(query);
-            self.visualData = self.CORE.updateVisualData(self.visualData);
-
-            //remove first crumb if longer then setting
-            //TODO Remove - show dynamically HISTORY_LENGTH crumbs
             if (self.historyData.length > QueryCrumbsConfiguration.dimensions.HISTORY_LENGTH) {
                 self.historyData.splice(0, 1);
                 self.currentIdx = self.historyData.length - 1;
@@ -901,11 +723,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.visualData.splice(0, 1);
                 self.visualData = self.CORE.updateVisualData(self.visualData);
             }
-
-            //redraw
             self.RENDERING.redraw(self.visualData);
-
-            //select current node and add info box
             self.svgContainer.selectAll(".crumb").last().each(function(d, i) {
                 self.currentNode = d;
                 self.currentIdx = d.rID;
@@ -914,9 +732,8 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 self.svgContainer.selectAll("g.infoBoxNode").remove();
                 self.INTERACTION.addInfoBox(this, d);
             });
-
-            self.setHistory({ history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: query.queryID });
-
+            //console.log(self.historyData);
+            self.setHistory({ history: self.historyData, base_color: self.visualData[0].base_color, currentQueryID: self.historyData[self.currentIdx].queryID });
         },
         getLastCrumb: function() {
             return (self.historyData.length > 0) ? self.historyData[self.historyData.length - 1].query : '';
