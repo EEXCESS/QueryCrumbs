@@ -202,7 +202,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                                 })
                                 .text(title)
                                 .appendTo('body')
-                                .fadeIn('slow').delay(1500).fadeOut(200);
+                                .delay(5000).fadeIn('slow').delay(1500).fadeOut(200);
 
                         
 
