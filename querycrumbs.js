@@ -187,8 +187,6 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                 $(document).ready(function() {
                     $('.tooltrip').css("cursor","pointer");
                     $('.tooltrip').hover(function() {
-                        if (showhover % 5 == 0) {
-                            console.log("hover")
                                 // Hover over code
                             var title = $(this).attr('title');
                             $(this).data('tipText', title).removeAttr('title');
@@ -206,8 +204,7 @@ define(['jquery', 'd3', 'QueryCrumbs/querycrumbs-settings'], function($, d3, Que
                                 .appendTo('body')
                                 .fadeIn('slow').delay(1500).fadeOut(200);
 
-                        }
-                        showhover++;
+                        
 
                     }, function() {
                         // Hover out code
