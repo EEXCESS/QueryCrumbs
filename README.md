@@ -31,12 +31,17 @@ When your application retrieved results for a new query, you inform QueryCrumbs 
 ```javascript
 QC.addNewQuery(query);
 ````
-The `query` parameter is assumed to be in [this format](https://github.com/EEXCESS/eexcess/wiki/Request-and-Response-format#response-format) (representing the retrieved results) with an additional attribute `profile`, representing the actual query in [this format](https://github.com/EEXCESS/eexcess/wiki/Request-and-Response-format#query-format)
+The `query` parameter is an object of the following format:  
+
+```javascript
+{
+ query:"query terms", // a string with the query terms
+ results:[{uri:<uri1>},{uri:<uri2>},...] // a list of the retrieved results with an identifier for each result
+}
+```
 
 ## Installable Demo
 If you want to see the QueryCrumbs in action, take a look at the [EEXCESS Chrome extension](https://chrome.google.com/webstore/detail/eexcess/mnicfonfoiffhekefgjlaihcpnbchdbc) in the [Chrome webstore](https://chrome.google.com/webstore/).
-
-We also provide an [installable demo](https://chrome.google.com/webstore/detail/querycrumbs/keaphphnhpggbokapedeokdgkojhppjp) that exhibits different layers of the QueryCrumbs. The layer can be selected in the profile (button in the upper right corner) via `mode` at `display settings`.
 
 
 
